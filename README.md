@@ -1,6 +1,6 @@
 # Trabalho-Aplica-o-em-CSharp
 Trabalho em C# desenvolvido para a disciplina Tópicos Especiais em Sistemas
 
-Participantes:
+Participantes:<br>
 João Felipe Mokdse Costa<br>
-Max Lopes Garcia de Oliveira
+Max Lopes Garcia de Oliveira<br>
