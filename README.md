@@ -5,3 +5,4 @@ Participantes:<br>
 João Felipe Mokdse Costa<br>
 Max Lopes Garcia de Oliveira<br>
 Júlia Helena Buosi Teixeira<br>
+Victor Schernikau Bahia Bittencourt Vieira<br>
