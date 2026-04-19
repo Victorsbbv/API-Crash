@@ -1,9 +1,13 @@
 Crash ERP - Sistema de Gestão de Contas a Pagar (Backend API)
 Integrantes:
 Participantes:
+
 João Felipe Mokdse Costa
+
 Max Lopes Garcia de Oliveira
+
 Júlia Helena Buosi Teixeira
+
 Victor Schernikau Bahia Bittencourt Vieira
 
 Curso: Análise e Desenvolvimento de Sistema
