@@ -1,76 +1,64 @@
-# API Crash
-Trabalho em C# desenvolvido para a disciplina Tópicos Especiais em Sistemas
+Crash ERP - Sistema de Gestão de Contas a Pagar (Backend API)
+Integrantes:
+Participantes:
+João Felipe Mokdse Costa
+Max Lopes Garcia de Oliveira
+Júlia Helena Buosi Teixeira
+Victor Schernikau Bahia Bittencourt Vieira
 
-Participantes:<br>
-João Felipe Mokdse Costa<br>
-Max Lopes Garcia de Oliveira<br>
-Júlia Helena Buosi Teixeira<br>
-Victor Schernikau Bahia Bittencourt Vieira<br>
+Curso: Análise e Desenvolvimento de Sistema
 
+Universidade: Universidade Positivo
 
-O modelo lógico é composto por 5 entidades fundamentais:
+Turma: N2, 3º Período
 
-1. *Fornecedores (Fornecedor):* Entidade credora. Armazena os dados de quem receberá o pagamento (Razão Social, CNPJ/CPF). Utiliza o tipo NUMBER(1) para representação booleana de status ativo/inativo (Padrão Oracle).
-2. *Plano de Contas (ContaContabil):* Classifica a natureza da despesa (ex: Energia Elétrica, Aluguel, Material de Escritório). Permite o agrupamento de despesas por categoria.
-3. *Centros de Custo (CentroCusto):* Classifica a origem gerencial da despesa (ex: Setor de Marketing, Diretoria, TI). Permite analisar qual departamento está consumindo os recursos.
-4. *Contas Bancárias / Caixas (ContaBancaria):* Representa as fontes de recurso da empresa (ex: Itaú, Bradesco, Caixa Físico). Mantém o controle rigoroso do SaldoAtual.
-5. *Contas a Pagar (ContaPagar):* O núcleo do sistema. Registra a obrigação financeira, contendo o valor, data de vencimento e status.
+📄 Resumo
+O Crash ERP é uma API especializada na gestão de saídas financeiras, desenvolvida em .NET 8 para automatizar o controle de contas a pagar. O sistema permite que o usuário gerencie saldos bancários de forma manual e realize a liquidação de obrigações financeiras, debitando automaticamente os valores dos saldos correspondentes. Operando sob o padrão REST, a API centraliza o ciclo de vida de fornecedores, classificações contábeis e centros de custo, oferecendo uma interface via Swagger para execução de baixas em lote e consultas de relatórios parametrizados.
 
-Relacionamentos e Regras de Negócio (Foreign Keys)
+🚀 Funcionalidades
+CRUD Completo de Contas a Pagar: Controle total (Inserção, Listagem, Edição e Remoção) das obrigações financeiras.
 
-A arquitetura garante as seguintes restrições de integridade no nível do banco de dados:
+Gestão de Entidades de Apoio: Cadastro, edição e inativação lógica para Fornecedores, Contas Contábeis e Centros de Custo.
 
-* *Obrigatoriedade de Rastreabilidade (1:N):* Uma conta a pagar *não pode ser criada* sem estar rigidamente vinculada a um Fornecedor, a uma Conta Contábil e a um Centro de Custo. Isso impede o lançamento de "despesas órfãs" no sistema.
-* *Vínculo Dinâmico de Pagamento:* A chave estrangeira ContaBancariaId na tabela de Contas a Pagar permite valores nulos (NULL / int?). Esta é uma regra de negócio vital: a origem do recurso só é definida no momento exato da *Baixa Unitária* (Liquidação do título).
+Gestão de Saldos Bancários: Registro e atualização manual de saldos para controle de disponibilidade financeira.
 
-Diagrama de Classes (UML)
+Baixa em Lote com Débito Automático: Liquidação simultânea de múltiplos títulos com abatimento direto no saldo da conta bancária informada.
 
-Abaixo está o diagrama conceitual de classes que espelha o mapeamento Objeto-Relacional (ORM) utilizado pelo Entity Framework Core no projeto:
+Relatórios Parametrizados via Swagger: Consultas processadas pelo backend com filtros por período, categoria, fornecedor e status.
 
-```mermaid
-classDiagram
-    direction BT
+Cálculo de Fluxo de Saída: Somatórios de valores pagos e pendentes integrados dinamicamente na resposta JSON das consultas.
 
-    class Fornecedor {
-        +int Id
-        +string RazaoSocial
-        +string CnpjCpf
-        +bool Ativo
-    }
+🛠️ Descrição das Funcionalidades
+1. Ciclo de Vida das Entidades
+O sistema aplica regras distintas para manter a integridade dos dados:
 
-    class ContaContabil {
-        +int Id
-        +string Codigo
-        +string Descricao
-    }
+Contas a Pagar (CRUD Completo): Permite a gestão total dos lançamentos de despesas, incluindo a exclusão física de registros.
 
-    class CentroCusto {
-        +int Id
-        +string Codigo
-        +string Nome
-    }
+Entidades de Base (Gestão de Inatividade): Fornecedores, Contas Contábeis e Centros de Custo possuem rotas de criação e edição. A exclusão é substituída pela Inativação Lógica, garantindo que títulos históricos não percam sua rastreabilidade e classificação.
 
-    class ContaBancaria {
-        +int Id
-        +string NomeCaixa
-        +decimal SaldoAtual
-    }
+2. Baixa de Títulos e Gestão de Saldo
+A funcionalidade central do sistema é o processamento de pagamentos. Ao realizar uma baixa (individual ou em lote), o usuário indica a conta bancária de origem. O sistema valida o saldo inserido manualmente e realiza o débito do valor do título, atualizando o status da conta para "Pago" e registrando o histórico da transação.
 
-    class ContaPagar {
-        +int Id
-        +string Descricao
-        +decimal Valor
-        +DateTime DataVencimento
-        +DateTime? DataPagamento
-        +string Status
-        +int FornecedorId
-        +int ContaContabilId
-        +int CentroCustoId
-        +int? ContaBancariaId
-    }
+3. Relatórios e Inteligência de Dados
+A API implementa uma lógica de filtros avançados no backend. Através do Swagger, o usuário pode parametrizar buscas complexas. O código processa essas variáveis e retorna não apenas a lista de títulos, mas também o cálculo consolidado dos valores (ex: total pago no período vs. total ainda em aberto), facilitando a visão de saúde financeira.
 
-    %% Relacionamentos (Multiplicidades)
-    ContaPagar "*" --> "1" Fornecedor : Pertence a
-    ContaPagar "*" --> "1" ContaContabil : Classificada em
-    ContaPagar "*" --> "1" CentroCusto : Alocada em
-    ContaPagar "*" --> "1" ContaBancaria : Paga por (Na Baixa)
+4. Integridade e Relacionamentos
+Para garantir a qualidade dos dados, o sistema exige que cada conta a pagar esteja obrigatoriamente vinculada a um fornecedor e a uma conta contábil ativos. Essas validações impedem lançamentos inconsistentes e garantem a precisão dos somatórios finais.
+
+📂 Repositório
+O projeto utiliza C# com SDK 8 (Minimal API) e Entity Framework Core para persistência em SQLite. A interação, testes de rotas e visualização de relatórios são realizados exclusivamente via Swagger UI.
+
+🤖 Uso de IA
+Ferramenta Utilizada: Gemini 3 Flash (Google)
+
+Forma de Uso:
+A IA foi utilizada para o planejamento técnico e documentação do sistema. Os prompts focaram em:
+
+Refinamento do Escopo: Adaptação do modelo de ERP para um sistema focado exclusivamente em Contas a Pagar e gestão manual de saldos.
+
+Redação Técnica: Elaboração das seções de resumo e descrição de funcionalidades do README, utilizando terminologia de engenharia de software e gestão financeira.
+
+Lógica de Negócio: Planejamento da funcionalidade de baixa em lote integrada ao débito automático em contas bancárias.
+
+Revisões Realizadas pela Equipe:
+A equipe revisou o documento para garantir que as funcionalidades descritas, como a ausência de contas a receber e o foco em saídas, estivessem alinhadas com o código implementado. Foi validado se os termos técnicos refletem a utilização exclusiva do Swagger para a exibição de respostas e relatórios.
