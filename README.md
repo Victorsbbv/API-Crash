@@ -1,5 +1,5 @@
 Crash ERP - Sistema de Gestão de Contas a Pagar (Backend API)
-Integrantes:
+
 Participantes:
 
 João Felipe Mokdse Costa
