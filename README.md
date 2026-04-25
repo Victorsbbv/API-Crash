@@ -66,3 +66,64 @@ Lógica de Negócio: Planejamento da funcionalidade de baixa em lote integrada a
 
 Revisões Realizadas pela Equipe:
 A equipe revisou o documento para garantir que as funcionalidades descritas, como a ausência de contas a receber e o foco em saídas, estivessem alinhadas com o código implementado. Foi validado se os termos técnicos refletem a utilização exclusiva do Swagger para a exibição de respostas e relatórios.
+
+```mermaid
+erDiagram
+    FORNECEDOR ||--o{ TITULO_FINANCEIRO : "emite"
+    CONTA_CONTABIL ||--o{ TITULO_FINANCEIRO : "classifica"
+    CENTRO_CUSTO ||--o{ TITULO_FINANCEIRO : "aloca"
+    TITULO_FINANCEIRO ||--o{ BAIXA_TITULO : "gera"
+    CONTA_BANCARIA ||--o{ BAIXA_TITULO : "liquida"
+
+    FORNECEDOR {
+        int Id PK
+        string RazaoSocial
+        string CnpjCpf
+        string Email
+        string Telefone
+        bool Ativo
+    }
+
+    CONTA_CONTABIL {
+        int Id PK
+        string Codigo
+        string Descricao
+        string Tipo
+    }
+
+    CENTRO_CUSTO {
+        int Id PK
+        string Codigo
+        string Nome
+    }
+
+    CONTA_BANCARIA {
+        int Id PK
+        string NomeCaixa
+        decimal SaldoAtual
+        bool Ativo
+    }
+
+    TITULO_FINANCEIRO {
+        int Id PK
+        string Descricao
+        decimal ValorOriginal
+        decimal ValorPago
+        date DataVencimento
+        date DataEmissao
+        char Tipo
+        string Status
+        int FornecedorId FK
+        int ContaContabilId FK
+        int CentroCustoId FK
+    }
+
+    BAIXA_TITULO {
+        int Id PK
+        int TituloId FK
+        int ContaBancariaId FK
+        datetime DataPagamento
+        decimal ValorBaixado
+        string UsuarioResponsavel
+    }
+```
