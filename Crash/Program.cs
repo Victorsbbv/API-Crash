@@ -1,6 +1,7 @@
-using Crash.Data;
-using Crash.Models;
+// Importando EntityFramework, Models e Data
 using Microsoft.EntityFrameworkCore;
+using Crash.Models;
+using Crash.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,24 +10,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Registra o Entity Framework com SQLite.
-// O Entity Framework é um ORM (Object-Relational Mapper): ele faz a ponte entre
-// os Models em C# e as tabelas do banco de dados, traduzindo operações como
-// db.Fornecedores.Add() para SQL automaticamente, sem precisar escrever SQL manual.
-// O "Data Source=crash.db" define o nome do arquivo do banco SQLite que será criado.
+//Usar o SQLite em Options
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite("Data Source=crash.db"));
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 
-// Ao iniciar a aplicação, abre uma conexão com o banco e chama EnsureCreated().
-// EnsureCreated() verifica se o banco já existe: se não existir, cria o arquivo
-// crash.db e todas as tabelas com base nos Models registrados no AppDbContext.
-// Isso substitui a necessidade de rodar Migrations manualmente pelo terminal
-// (comandos: dotnet ef migrations add / dotnet ef database update).
-// Migrations são mais indicadas para produção pois permitem atualizar o banco
-// sem perder dados. Para este projeto, EnsureCreated() é suficiente.
-using (var scope = app.Services.CreateScope())
+// Swagger - Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.EnsureCreated();
@@ -41,5 +32,52 @@ using (var scope = app.Services.CreateScope())
 // As rotas de CRUD de cada entidade ainda precisam ser implementadas)
 
 app.MapGet("/", () => "Crash ERP API está online!");
+
+// ROTAS DE FORNECEDORES - Utilizando Swagger
+// GET request
+app.MapGet("/api/fornecedores", async (AppDbContext db) =>
+{
+    var fornecedores = await db.Fornecedores.Where(f => f.Ativo).ToListAsync();
+    return Results.Ok(fornecedores);
+}).WithName("ListarFornecedores").WithOpenApi();
+
+//POST request
+app.MapPost("/api/fornecedores", async (Fornecedor fornecedor, AppDbContext db) =>
+{
+    //Fornecedores 'espera' o swagger (Botão de enviar)
+    db.Fornecedores.Add(fornecedor);
+    //Salva as alterações no banco de dados
+    await db.SaveChangesAsync();
+    //Mensagem de retorno Created - 201
+    return Results.Created($"/api/fornecedores/{fornecedor.Id}", fornecedor);
+    //WithName - Nome interno único dessa rota, evita que alterações como /api/v1/fornecedores quebrem o fluxo
+    //WithOpenApi - Inclui o nome interno nos campos do Swagger
+}).WithName("CriarFornecedor").WithOpenApi(); 
+
+//PUT (UPDATE) request
+app.MapPut("/api/fornecedores/{id}", async (int id, Fornecedor atualizado, AppDbContext db) =>
+{
+    //Espera o banco de dados procurar pelo id requisitado pelo swagger
+    var fornecedor = await db.Fornecedores.FindAsync(id);
+    //Caso o banco de dados não ache esse id (no caso fornecedor seria nulo) ele retorna um NotFound 404
+    if (fornecedor is null) return Results.NotFound("Fornecedor não encontrado.");
+
+    fornecedor.Nome = atualizado.Nome;
+    fornecedor.CNPJ = atualizado.CNPJ;
+    await db.SaveChangesAsync();
+    return Results.Ok(fornecedor);
+}).WithName("AtualizarFornecedor").WithOpenApi();
+
+//DELETE request (obs: nesse caso pelas regras de negócio os fornecedores não poderão ser deletados, apenas desativados)
+app.MapDelete("/api/fornecedores/{id}", async (int id, AppDbContext db) =>
+{
+    var fornecedor = await db.Fornecedores.FindAsync(id);
+    if (fornecedor is null) return Results.NotFound("Fornecedor não encontrado.");
+
+    fornecedor.Ativo = false;
+    await db.SaveChangesAsync();
+    return Results.Ok(new { Mensagem = "Fornecedor inativado." });
+}).WithName("InativarFornecedor").WithOpenApi();
+
 
 app.Run();
