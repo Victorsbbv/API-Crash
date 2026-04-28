@@ -5,8 +5,8 @@ using Crash.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Swagger - Add services to the container.
-// Swagger - Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// Ativa o Swagger, que é a interface visual (acessada pelo navegador) para testar
+// as rotas da API sem precisar de ferramentas externas como o Postman.
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -19,11 +19,19 @@ var app = builder.Build();
 // Swagger - Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated();
 }
 
-app.UseHttpsRedirection();
+// Ativa a interface visual do Swagger para testar as rotas
+    app.UseSwagger();
+    app.UseSwaggerUI();
+
+// Rota placeholder (adicionei uma rota mínima no / para confirmar que a API está online 
+// quando acessada pelo navegador. 
+// As rotas de CRUD de cada entidade ainda precisam ser implementadas)
+
+app.MapGet("/", () => "Crash ERP API está online!");
 
 // ROTAS DE FORNECEDORES - Utilizando Swagger
 // GET request

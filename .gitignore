@@ -8,6 +8,9 @@ obj/
 *.userosscache
 *.sln.docstates
 
+# Banco de dados SQLite, depois remover para funcionar o banco de dados
+*.db
+
 # Visual Studio / VS Code
 .vs/
 .vscode/
