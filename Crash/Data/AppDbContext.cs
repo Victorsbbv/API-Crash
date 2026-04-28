@@ -12,4 +12,5 @@ public class AppDbContext : DbContext
     public DbSet<CentroCusto> CentrosCusto { get; set; }
     public DbSet<ContaBacancaria> ContasBancarias { get; set; }
     public DbSet<ContaPagar> ContasAPagar { get; set; }
+    public DbSet<BaixaTitulo> BaixasTitulos { get; set; }
 }

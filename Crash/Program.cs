@@ -1,44 +1,83 @@
+// Importando EntityFramework, Models e Data
+using Microsoft.EntityFrameworkCore;
+using Crash.Models;
+using Crash.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// Ativa o Swagger, que é a interface visual (acessada pelo navegador) para testar
+// as rotas da API sem precisar de ferramentas externas como o Postman.
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+//Usar o SQLite em Options
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Swagger - Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated();
+}
+
+// Ativa a interface visual do Swagger para testar as rotas
     app.UseSwagger();
     app.UseSwaggerUI();
-}
 
-app.UseHttpsRedirection();
+// Rota placeholder (adicionei uma rota mínima no / para confirmar que a API está online 
+// quando acessada pelo navegador. 
+// As rotas de CRUD de cada entidade ainda precisam ser implementadas)
 
-var summaries = new[]
+app.MapGet("/", () => "Crash ERP API está online!");
+
+// ROTAS DE FORNECEDORES - Utilizando Swagger
+// GET request
+app.MapGet("/api/fornecedores", async (AppDbContext db) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    var fornecedores = await db.Fornecedores.Where(f => f.Ativo).ToListAsync();
+    return Results.Ok(fornecedores);
+}).WithName("ListarFornecedores").WithOpenApi();
 
-app.MapGet("/weatherforecast", () =>
+//POST request
+app.MapPost("/api/fornecedores", async (Fornecedor fornecedor, AppDbContext db) =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+    //Fornecedores 'espera' o swagger (Botão de enviar)
+    db.Fornecedores.Add(fornecedor);
+    //Salva as alterações no banco de dados
+    await db.SaveChangesAsync();
+    //Mensagem de retorno Created - 201
+    return Results.Created($"/api/fornecedores/{fornecedor.Id}", fornecedor);
+    //WithName - Nome interno único dessa rota, evita que alterações como /api/v1/fornecedores quebrem o fluxo
+    //WithOpenApi - Inclui o nome interno nos campos do Swagger
+}).WithName("CriarFornecedor").WithOpenApi(); 
+
+//PUT (UPDATE) request
+app.MapPut("/api/fornecedores/{id}", async (int id, Fornecedor atualizado, AppDbContext db) =>
+{
+    //Espera o banco de dados procurar pelo id requisitado pelo swagger
+    var fornecedor = await db.Fornecedores.FindAsync(id);
+    //Caso o banco de dados não ache esse id (no caso fornecedor seria nulo) ele retorna um NotFound 404
+    if (fornecedor is null) return Results.NotFound("Fornecedor não encontrado.");
+
+    fornecedor.Nome = atualizado.Nome;
+    fornecedor.CNPJ = atualizado.CNPJ;
+    await db.SaveChangesAsync();
+    return Results.Ok(fornecedor);
+}).WithName("AtualizarFornecedor").WithOpenApi();
+
+//DELETE request (obs: nesse caso pelas regras de negócio os fornecedores não poderão ser deletados, apenas desativados)
+app.MapDelete("/api/fornecedores/{id}", async (int id, AppDbContext db) =>
+{
+    var fornecedor = await db.Fornecedores.FindAsync(id);
+    if (fornecedor is null) return Results.NotFound("Fornecedor não encontrado.");
+
+    fornecedor.Ativo = false;
+    await db.SaveChangesAsync();
+    return Results.Ok(new { Mensagem = "Fornecedor inativado." });
+}).WithName("InativarFornecedor").WithOpenApi();
+
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
