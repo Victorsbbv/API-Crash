@@ -19,8 +19,11 @@ var app = builder.Build();
 // Swagger - Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated();
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        db.Database.EnsureCreated();
+    }
 }
 
 // Ativa a interface visual do Swagger para testar as rotas
@@ -30,7 +33,6 @@ if (app.Environment.IsDevelopment())
 // Rota placeholder (adicionei uma rota mínima no / para confirmar que a API está online 
 // quando acessada pelo navegador. 
 // As rotas de CRUD de cada entidade ainda precisam ser implementadas)
-
 app.MapGet("/", () => "Crash ERP API está online!");
 
 // ROTAS DE FORNECEDORES - Utilizando Swagger
@@ -73,7 +75,7 @@ app.MapDelete("/api/fornecedores/{id}", async (int id, AppDbContext db) =>
 {
     var fornecedor = await db.Fornecedores.FindAsync(id);
     if (fornecedor is null) return Results.NotFound("Fornecedor não encontrado.");
-
+    
     fornecedor.Ativo = false;
     await db.SaveChangesAsync();
     return Results.Ok(new { Mensagem = "Fornecedor inativado." });
