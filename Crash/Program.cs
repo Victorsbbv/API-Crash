@@ -74,12 +74,64 @@ app.MapPut("/api/fornecedores/{id}", async (int id, Fornecedor atualizado, AppDb
 app.MapDelete("/api/fornecedores/{id}", async (int id, AppDbContext db) =>
 {
     var fornecedor = await db.Fornecedores.FindAsync(id);
-    if (fornecedor is null) return Results.NotFound("Fornecedor não encontrado.");
-    
+    if (fornecedor is null)
+    {
+        return Results.NotFound("Fornecedor não encontrado.");
+    }    
     fornecedor.Ativo = false;
     await db.SaveChangesAsync();
     return Results.Ok(new { Mensagem = "Fornecedor inativado." });
 }).WithName("InativarFornecedor").WithOpenApi();
 
+// ROTAS DE CONTACONTÁBIL - Utilizando Swagger
+// GET request
+app.MapGet("api/contacontabil/", async (AppDbContext db) =>
+{
+    var contacontabil = await db.ContasContabeis.Where(f => f.Ativo).ToListAsync();
+    if (contacontabil.Any())
+    {
+        return Results.Ok(contacontabil);
+    } else
+    {
+        return Results.NotFound("Não há contas contábeis registrados ou ativos.");
+    }
+}).WithName("ListarContaContabil").WithOpenApi();
+
+app.MapPost("/api/contacontabil/", async (ContaContabil contacontabil, AppDbContext db) =>
+{
+    db.ContasContabeis.Add(contacontabil);
+        if (string.IsNullOrWhiteSpace(contacontabil.Nome) || string.IsNullOrWhiteSpace(contacontabil.Codigo)){
+            await db.SaveChangesAsync();
+            return Results.Created($"/api/contacontabil/{contacontabil.Id}", contacontabil);
+        } else
+        {
+            return Results.BadRequest("O nome da conta contábil não pode ser vazio.");
+        }
+}).WithName("CriarContaContabil").WithOpenApi();
+
+app.MapPut("/api/contacontabil/{id}", async (int id, ContaContabil atualizado, AppDbContext db) =>
+{
+    var contacontabil = await db.ContasContabeis.FindAsync(id);
+    if (contacontabil is null)
+    {
+        return Results.NotFound("Conta Contábil não encontrada.");
+    } 
+    contacontabil.Nome = atualizado.Nome;
+    contacontabil.Codigo = atualizado.Codigo;
+    await db.SaveChangesAsync();
+    return Results.Ok(contacontabil);
+}).WithName("BuscarContaContabil").WithOpenApi();
+
+app.MapDelete("/api/contacontabil/{id}", async (int id, AppDbContext db) =>
+{
+    var contacontabil = await db.ContasContabeis.FindAsync(id);
+    if (contacontabil is null)
+    {
+        return Results.NotFound("Conta contábil não encontrada.");
+    }    
+    contacontabil.Ativo = false;
+    await db.SaveChangesAsync();
+    return Results.Ok(new { Mensagem = "Conta contábil inativada." });
+}).WithName("InativarContaContabil").WithOpenApi();
 
 app.Run();
