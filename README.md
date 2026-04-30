@@ -95,6 +95,7 @@ erDiagram
         int Id PK
         string Codigo
         string Nome
+        bool Ativo
     }
 
     CONTA_BANCARIA {
