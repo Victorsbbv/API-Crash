@@ -100,7 +100,7 @@ app.MapGet("api/contacontabil/", async (AppDbContext db) =>
 app.MapPost("/api/contacontabil/", async (ContaContabil contacontabil, AppDbContext db) =>
 {
     db.ContasContabeis.Add(contacontabil);
-        if (string.IsNullOrWhiteSpace(contacontabil.Nome) || string.IsNullOrWhiteSpace(contacontabil.Codigo)){
+        if (!string.IsNullOrWhiteSpace(contacontabil.Nome) || string.IsNullOrWhiteSpace(contacontabil.Codigo)){
             await db.SaveChangesAsync();
             return Results.Created($"/api/contacontabil/{contacontabil.Id}", contacontabil);
         } else
@@ -133,5 +133,49 @@ app.MapDelete("/api/contacontabil/{id}", async (int id, AppDbContext db) =>
     await db.SaveChangesAsync();
     return Results.Ok(new { Mensagem = "Conta contábil inativada." });
 }).WithName("InativarContaContabil").WithOpenApi();
+
+//Rotas de Centro de Custo
+
+//Get - Lista todos os centros de custo ativos
+app.MapGet("/api/centrocusto", async (AppDbContext db) =>
+{
+    var centros = await db.CentrosCusto.Where(c => c.Ativo).
+    ToListAsync();
+    if(!centros.Any())
+    {
+        return Results.NotFound("Não há centros de custo registrados ou ativos.");
+    }
+    return Results.Ok(centros);
+}).WithName("ListarCentrosCusto").WithOpenApi();
+
+//Post - Criar um novo centro de custo
+app.MapPost("/api/centrocusto", async (CentroCusto centrocusto, AppDbContext db)=>
+{
+    if(string.IsNullOrWhiteSpace(centrocusto.Nome))
+    return Results.BadRequest("O nome do centro de custo é obrigatório.");
+    db.CentrosCusto.Add(centrocusto);
+    await db.SaveChangesAsync();
+    return Results.Created($"/api/centrocusto/{centrocusto.Id}", centrocusto);
+}).WithName("CriarCentroCusto").WithOpenApi();
+
+//Put - Atualiza um centro de custo existente
+app.MapPut("/api/centro/{id}", async (int id, CentroCusto atualizado, AppDbContext db)=>
+{
+    var centro = await db.CentrosCusto.FindAsync(id);
+    if(centro is null) return Results.NotFound("Centro de custo não encontrado.");
+    centro.Nome = atualizado.Nome;
+    await db.SaveChangesAsync();
+    return Results.Ok(centro);
+}).WithName("AtualizarCentroCusto").WithOpenApi();
+// DELETE - Inativa um centro de custo (inativo/ativo)
+app.MapDelete("/api/centrocusto/{id}", async (int id, AppDbContext db) =>
+{
+    var centro = await db.CentrosCusto.FindAsync(id);
+    if (centro is null) return Results.NotFound("Centro de custo não encontrado.");
+
+    centro.Ativo = false;
+    await db.SaveChangesAsync();
+    return Results.Ok(new { Mensagem = "Centro de custo inativado com sucesso." });
+}).WithName("InativarCentroCusto").WithOpenApi();
 
 app.Run();
