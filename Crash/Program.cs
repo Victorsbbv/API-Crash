@@ -178,4 +178,176 @@ app.MapDelete("/api/centrocusto/{id}", async (int id, AppDbContext db) =>
     return Results.Ok(new { Mensagem = "Centro de custo inativado com sucesso." });
 }).WithName("InativarCentroCusto").WithOpenApi();
 
+// Rotas de Conta Bancária
+
+// GET - Faz a listagem de todas as contas bancárias ativas
+
+app.MapGet("/api/contabancaria", async (AppDbContext db) => 
+{
+    var contas = await db.ContasBancarias.Where(c => c.Ativo).ToListAsync();
+    if(!contas.Any())
+    {
+        return Results.NotFound("Não há contas bancárias registradas ou ativas.");
+    }
+    return Results.Ok(contas);
+}).WithName("ListarContasBancarias").WithOpenApi();
+
+// POST - Faz a criação de uma nova conta bancária
+app.MapPost("/api/contabancaria", async (ContaBancaria conta, AppDbContext db) =>
+{
+if (string.IsNullOrWhiteSpace(conta.NomeBanco))
+{
+        return Results.BadRequest("O nome do banco é obrigatório.");
+}
+
+    db.ContasBancarias.Add(conta);
+    await db.SaveChangesAsync();
+    return Results.Created($"/api/contabancaria/{conta.Id}", conta);
+}).WithName("CriarContaBancaria").WithOpenApi();
+
+// PUT - Atualiza o saldo ou o nome de uma conta bancária
+app.MapPut("/api/contabancaria/{id}", async (int id, ContaBancaria atualizado, AppDbContext db) =>
+{
+    var conta = await db.ContasBancarias.FindAsync(id);
+    if (conta is null)
+    {
+        return Results.NotFound("Conta bancária não encontrada.");
+    }
+
+    conta.NomeBanco = atualizado.NomeBanco;
+    conta.Saldo = atualizado.Saldo;
+    await db.SaveChangesAsync();
+    return Results.Ok(conta);
+}).WithName("AtualizarContaBancaria").WithOpenApi();
+
+// DELETE - Inativa uma conta bancária (exclusão lógica)
+app.MapDelete("/api/contabancaria/{id}", async (int id, AppDbContext db) =>
+{
+    var conta = await db.ContasBancarias.FindAsync(id);
+    if (conta is null)
+    {
+        return Results.NotFound("Conta bancária não encontrada.");
+    }
+
+    conta.Ativo = false;
+    await db.SaveChangesAsync();
+    return Results.Ok(new { Mensagem = "Conta bancária inativada com sucesso." });
+}).WithName("InativarContaBancaria").WithOpenApi();
+
+// Rotas de Contas a Pagar
+
+// GET - lista todas as contas a pagar com relacionamentos
+app.MapGet("/api/contapagar", async (AppDbContext db) => 
+{
+    var conta = await db.ContasAPagar
+        .Include(c => c.Fornecedor)
+        .Include(c => c.ContaContabil)
+        .Include(c => c.CentroCusto)
+        .Include(c => c.ContaBancaria)
+        .FirstOrDefaultAsync(c => c.Id == id);
+
+    if (conta is null)
+    { 
+        return Results.NotFound("Conta a pagar não encontrada.");
+    }
+    return Results.Ok(conta);
+}).WithName("BuscarContaPagar").WithOpenApi();
+
+// POST - Cria uma nova conta a pagar
+app.MapPost("/api/contapagar", async (ContaPagar conta, AppDbContext db) =>
+{
+    // AnyAsync não rastreia a entidade, evitando conflito de tracking com o body do request
+    var fornecedorValido = await db.Fornecedores.AnyAsync(f => f.Id == conta.FornecedorId && f.Ativo);
+    if(!fornecedorValido)
+    {
+        return Results.BadRequest("Fornecedor não encontrado ou inativo.");
+    }
+
+    var contaContabilValida = await db.ContasContabeis.AnyAsync(c => c.Id == conta.ContaContabilId && c.Ativo);
+    if (!contaContabilValida)
+    {
+        return Results.BadRequest("Conta contábil não encontrada ou inativa.");
+    }
+
+    var centroCustoValido = await db.CentrosCusto.AnyAsync(c => c.Id == conta.CentroCustoId && c.Ativo);
+    if (!centroCustoValido)
+    {
+        return Results.BadRequest("Centro de custo não encontrado ou inativo.");
+    }
+
+    // Zera navegações para o EF não tentar rastrear objetos duplicados vindos do body
+    conta.Fornecedor = null;
+    conta.ContaContabil = null;
+    conta.CentroCusto = null;
+    conta.ContaBancaria = null;
+
+    db.ContasAPagar.Add(conta);
+    await db.SaveChangesAsync();
+    return Results.Created($"/api/contapagar/{conta.Id}", conta);
+}).WithName("CriarContaPagar").WithOpenApi();
+
+// PUT - Atualiza uma conta a pagar (bloqueado se já foi pago)
+app.MapPut("/api/contapagar/{id}", async (int id, ContaPagar atualizado, AppDbContext db) =>
+{
+    var conta = await db.ContasAPagar.FindAsync(id);
+    if (conta is null) 
+    {
+        return Results.NotFound("Conta a pagar não encontrada.");
+    }
+    if (conta.Pago) 
+    {
+        return Results.BadRequest("Não é possível editar uma conta que já foi baixada.");
+    }
+
+    // AnyAsync não rastreia a entidade, evitando conflito de tracking com o body do request
+    var fornecedorValido = await db.Fornecedores.AnyAsync(f => f.Id == atualizado.FornecedorId && f.Ativo);
+    if (!fornecedorValido)
+    {
+        return Results.BadRequest("Fornecedor não encontrado ou inativo.");
+    }
+
+    var contaContabilValida = await db.ContasContabeis.AnyAsync(c => c.Id == atualizado.ContaContabilId && c.Ativo);
+    if (!contaContabilValida)
+    {
+        return Results.BadRequest("Conta contábil não encontrada ou inativa.");
+    }
+
+    var centroCustoValido = await db.CentrosCusto.AnyAsync(c => c.Id == atualizado.CentroCustoId && c.Ativo);
+    if (!centroCustoValido)
+    {
+        return Results.BadRequest("Centro de custo não encontrado ou inativo.");
+    }
+
+    conta.Descricao = atualizado.Descricao;
+    conta.Valor = atualizado.Valor;
+    conta.DataVencimento = atualizado.DataVencimento;
+    conta.FornecedorId = atualizado.FornecedorId;
+    conta.ContaContabilId = atualizado.ContaContabilId;
+    conta.CentroCustoId = atualizado.CentroCustoId;
+
+    await db.SaveChangesAsync();
+    return Results.Ok(conta);
+}).WithName("AtualizarContaPagar").WithOpenApi();
+
+// DELETE - Remove fisicamente uma conta a pagar (bloqueando se já foi pago
+app.MapDelete("/api/contapagar/{id}", async (int id, AppDbContext db) =>
+{
+    var conta = await db.ContasAPagar.FindAsync(id);
+    if (conta is null) 
+    {
+        return Results.NotFound("Conta a pagar não encontrada.");
+    }
+    if (conta.Pago)
+    {
+        return Results.BadRequest("Não é possível excluir uma conta que já foi baixada.");
+    }
+    db.ContasAPagar.Remove(conta);
+    await db.SaveChangesAsync();
+    return Results.Ok(new { Mensagem = "Conta a pagar removida com sucesso." });
+}).WithName("RemoverContaPagar").WithOpenApi();
+
+
+
+
+
 app.Run();

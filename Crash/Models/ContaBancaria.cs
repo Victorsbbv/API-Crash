@@ -2,7 +2,7 @@ using System;
 
 namespace Crash.Models;
 
-public class ContaBacancaria
+public class ContaBancaria
 {
     public int Id { get; set; }
         public string NomeBanco { get; set; } = string.Empty;

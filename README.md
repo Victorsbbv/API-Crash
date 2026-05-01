@@ -89,6 +89,7 @@ erDiagram
         string Codigo
         string Descricao
         string Tipo
+        bool Ativo
     }
 
     CENTRO_CUSTO {
