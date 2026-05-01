@@ -346,6 +346,47 @@ app.MapDelete("/api/contapagar/{id}", async (int id, AppDbContext db) =>
     return Results.Ok(new { Mensagem = "Conta a pagar removida com sucesso." });
 }).WithName("RemoverContaPagar").WithOpenApi();
 
+//Rotas de baixas de titulos
+
+//Post - baixa individual informando os ids de conta a pagar e conta bancaria
+
+app.MapPost("/api/baixa/{contaPagarId}", async (int contaPagarId, BaixaTitulo pedido, AppDbContext db) =>
+{
+    var conta = await db.ContasAPagar.FindAsync(contaPagarId);
+    if(conta is null)
+    return Results.NotFound("Conta a pagar não encontrada.");
+    if(conta.Pago)
+    return Results.BadRequest("Este título já foi baixado.");
+    
+    var contaBancaria = await db.ContasBancarias.FindAsync(pedido.ContaBancariaId);
+    if(contaBancaria is null || !contaBancaria.Ativo)
+    return Results.BadRequest("Conta bancária não encontrada ou inativa.");
+
+    if(contaBancaria.Saldo < conta.Valor)
+    return Results.BadRequest($"Saldo insuficiente. Saldo disponível: {contaBancaria.Saldo:C}");
+
+    contaBancaria.Saldo -= conta.Valor;
+    conta.Pago = true;
+    conta.ContaBancariaId = contaBancaria.Id;
+
+    var baixa = new BaixaTitulo
+    {
+        ContaPagarId = conta.Id,
+        ContaBancariaId = contaBancaria.Id,
+        ValorBaixado = conta.Valor,
+        DataPagamento = DateTime.Now
+    };
+    db.BaixasTitulos.Add(baixa);
+    await db.SaveChangesAsync();
+    return Results.Ok(new
+    {
+        Mensagem = "Título baixado com sucesso.",
+        BaixaId = baixa.Id,
+        ValorDebitado = baixa.ValorBaixado,
+        SaldoRestante = contaBancaria.Saldo
+    });
+}
+).WithName("BaixarTituloIndividual").WithOpenApi();
 
 
 
