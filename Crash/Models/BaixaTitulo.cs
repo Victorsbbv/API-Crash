@@ -13,5 +13,5 @@ public class BaixaTitulo
     public ContaPagar? ContaPagar { get; set; }
 
     public int ContaBancariaId { get; set; }
-    public ContaBacancaria? ContaBancaria { get; set; }
+    public ContaBancaria? ContaBancaria { get; set; }
 }

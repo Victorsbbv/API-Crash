@@ -237,7 +237,7 @@ app.MapDelete("/api/contabancaria/{id}", async (int id, AppDbContext db) =>
 // Rotas de Contas a Pagar
 
 // GET - lista todas as contas a pagar com relacionamentos
-app.MapGet("/api/contapagar", async (AppDbContext db) => 
+app.MapGet("/api/contapagar", async (int id, AppDbContext db) => 
 {
     var conta = await db.ContasAPagar
         .Include(c => c.Fornecedor)

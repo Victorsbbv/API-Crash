@@ -22,5 +22,5 @@ public class ContaPagar
 
     // Relacionamento com Conta Bancária (Preenchido só quando ocorrer a baixa)
     public int? ContaBancariaId { get; set; }
-    public ContaBacancaria? ContaBancaria { get; set; }
+    public ContaBancaria? ContaBancaria { get; set; }
 }
