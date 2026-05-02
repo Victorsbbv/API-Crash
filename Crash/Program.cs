@@ -27,8 +27,8 @@ if (app.Environment.IsDevelopment())
 }
 
 // Ativa a interface visual do Swagger para testar as rotas
-    app.UseSwagger();
-    app.UseSwaggerUI();
+app.UseSwagger();
+app.UseSwaggerUI();
 
 
 // ROTAS DE FORNECEDORES - Utilizando Swagger
@@ -50,7 +50,7 @@ app.MapPost("/api/fornecedores", async (Fornecedor fornecedor, AppDbContext db) 
     return Results.Created($"/api/fornecedores/{fornecedor.Id}", fornecedor);
     //WithName - Nome interno único dessa rota, evita que alterações como /api/v1/fornecedores quebrem o fluxo
     //WithOpenApi - Inclui o nome interno nos campos do Swagger
-}).WithName("CriarFornecedor").WithOpenApi(); 
+}).WithName("CriarFornecedor").WithOpenApi();
 
 //PUT (UPDATE) request
 app.MapPut("/api/fornecedores/{id}", async (int id, Fornecedor atualizado, AppDbContext db) =>
@@ -73,7 +73,7 @@ app.MapDelete("/api/fornecedores/{id}", async (int id, AppDbContext db) =>
     if (fornecedor is null)
     {
         return Results.NotFound("Fornecedor não encontrado.");
-    }    
+    }
     fornecedor.Ativo = false;
     await db.SaveChangesAsync();
     return Results.Ok(new { Mensagem = "Fornecedor inativado." });
@@ -87,18 +87,19 @@ app.MapGet("api/contacontabil/", async (AppDbContext db) =>
     if (contacontabil.Any())
     {
         return Results.Ok(contacontabil);
-    } else
+    }
+    else
     {
         return Results.NotFound("Não há contas contábeis registrados ou ativos.");
     }
 }).WithName("ListarContaContabil").WithOpenApi();
 
-    // POST - Cria uma nova conta contábil
+// POST - Cria uma nova conta contábil
 app.MapPost("/api/contacontabil", async (ContaContabil contacontabil, AppDbContext db) =>
 {
     if (string.IsNullOrWhiteSpace(contacontabil.Nome) || string.IsNullOrWhiteSpace(contacontabil.Codigo))
         return Results.BadRequest("O nome e o código da conta contábil são obrigatórios.");
- 
+
     contacontabil.Ativo = true;
     db.ContasContabeis.Add(contacontabil);
     await db.SaveChangesAsync();
@@ -111,7 +112,7 @@ app.MapPut("/api/contacontabil/{id}", async (int id, ContaContabil atualizado, A
     if (contacontabil is null)
     {
         return Results.NotFound("Conta Contábil não encontrada.");
-    } 
+    }
     contacontabil.Nome = atualizado.Nome;
     contacontabil.Codigo = atualizado.Codigo;
     await db.SaveChangesAsync();
@@ -124,7 +125,7 @@ app.MapDelete("/api/contacontabil/{id}", async (int id, AppDbContext db) =>
     if (contacontabil is null)
     {
         return Results.NotFound("Conta contábil não encontrada.");
-    }    
+    }
     contacontabil.Ativo = false;
     await db.SaveChangesAsync();
     return Results.Ok(new { Mensagem = "Conta contábil inativada." });
@@ -137,7 +138,7 @@ app.MapGet("/api/centrocusto", async (AppDbContext db) =>
 {
     var centros = await db.CentrosCusto.Where(c => c.Ativo).
     ToListAsync();
-    if(!centros.Any())
+    if (!centros.Any())
     {
         return Results.NotFound("Não há centros de custo registrados ou ativos.");
     }
@@ -145,20 +146,20 @@ app.MapGet("/api/centrocusto", async (AppDbContext db) =>
 }).WithName("ListarCentrosCusto").WithOpenApi();
 
 //Post - Criar um novo centro de custo
-app.MapPost("/api/centrocusto", async (CentroCusto centrocusto, AppDbContext db)=>
+app.MapPost("/api/centrocusto", async (CentroCusto centrocusto, AppDbContext db) =>
 {
-    if(string.IsNullOrWhiteSpace(centrocusto.Nome))
-    return Results.BadRequest("O nome do centro de custo é obrigatório.");
+    if (string.IsNullOrWhiteSpace(centrocusto.Nome))
+        return Results.BadRequest("O nome do centro de custo é obrigatório.");
     db.CentrosCusto.Add(centrocusto);
     await db.SaveChangesAsync();
     return Results.Created($"/api/centrocusto/{centrocusto.Id}", centrocusto);
 }).WithName("CriarCentroCusto").WithOpenApi();
 
 //Put - Atualiza um centro de custo existente
-app.MapPut("/api/centro/{id}", async (int id, CentroCusto atualizado, AppDbContext db)=>
+app.MapPut("/api/centro/{id}", async (int id, CentroCusto atualizado, AppDbContext db) =>
 {
     var centro = await db.CentrosCusto.FindAsync(id);
-    if(centro is null) return Results.NotFound("Centro de custo não encontrado.");
+    if (centro is null) return Results.NotFound("Centro de custo não encontrado.");
     centro.Nome = atualizado.Nome;
     await db.SaveChangesAsync();
     return Results.Ok(centro);
@@ -178,10 +179,10 @@ app.MapDelete("/api/centrocusto/{id}", async (int id, AppDbContext db) =>
 
 // GET - Faz a listagem de todas as contas bancárias ativas
 
-app.MapGet("/api/contabancaria", async (AppDbContext db) => 
+app.MapGet("/api/contabancaria", async (AppDbContext db) =>
 {
     var contas = await db.ContasBancarias.Where(c => c.Ativo).ToListAsync();
-    if(!contas.Any())
+    if (!contas.Any())
     {
         return Results.NotFound("Não há contas bancárias registradas ou ativas.");
     }
@@ -191,10 +192,10 @@ app.MapGet("/api/contabancaria", async (AppDbContext db) =>
 // POST - Faz a criação de uma nova conta bancária
 app.MapPost("/api/contabancaria", async (ContaBancaria conta, AppDbContext db) =>
 {
-if (string.IsNullOrWhiteSpace(conta.NomeBanco))
-{
+    if (string.IsNullOrWhiteSpace(conta.NomeBanco))
+    {
         return Results.BadRequest("O nome do banco é obrigatório.");
-}
+    }
 
     db.ContasBancarias.Add(conta);
     await db.SaveChangesAsync();
@@ -233,7 +234,7 @@ app.MapDelete("/api/contabancaria/{id}", async (int id, AppDbContext db) =>
 // Rotas de Contas a Pagar
 
 // GET - lista todas as contas a pagar com relacionamentos
-app.MapGet("/api/contapagar", async (int id, AppDbContext db) => 
+app.MapGet("/api/contapagar", async (int id, AppDbContext db) =>
 {
     var conta = await db.ContasAPagar
         .Include(c => c.Fornecedor)
@@ -243,7 +244,7 @@ app.MapGet("/api/contapagar", async (int id, AppDbContext db) =>
         .FirstOrDefaultAsync(c => c.Id == id);
 
     if (conta is null)
-    { 
+    {
         return Results.NotFound("Conta a pagar não encontrada.");
     }
     return Results.Ok(conta);
@@ -254,7 +255,7 @@ app.MapPost("/api/contapagar", async (ContaPagar conta, AppDbContext db) =>
 {
     // AnyAsync não rastreia a entidade, evitando conflito de tracking com o body do request
     var fornecedorValido = await db.Fornecedores.AnyAsync(f => f.Id == conta.FornecedorId && f.Ativo);
-    if(!fornecedorValido)
+    if (!fornecedorValido)
     {
         return Results.BadRequest("Fornecedor não encontrado ou inativo.");
     }
@@ -286,11 +287,11 @@ app.MapPost("/api/contapagar", async (ContaPagar conta, AppDbContext db) =>
 app.MapPut("/api/contapagar/{id}", async (int id, ContaPagar atualizado, AppDbContext db) =>
 {
     var conta = await db.ContasAPagar.FindAsync(id);
-    if (conta is null) 
+    if (conta is null)
     {
         return Results.NotFound("Conta a pagar não encontrada.");
     }
-    if (conta.Pago) 
+    if (conta.Pago)
     {
         return Results.BadRequest("Não é possível editar uma conta que já foi baixada.");
     }
@@ -329,7 +330,7 @@ app.MapPut("/api/contapagar/{id}", async (int id, ContaPagar atualizado, AppDbCo
 app.MapDelete("/api/contapagar/{id}", async (int id, AppDbContext db) =>
 {
     var conta = await db.ContasAPagar.FindAsync(id);
-    if (conta is null) 
+    if (conta is null)
     {
         return Results.NotFound("Conta a pagar não encontrada.");
     }
@@ -344,22 +345,22 @@ app.MapDelete("/api/contapagar/{id}", async (int id, AppDbContext db) =>
 
 //Rotas de baixas de titulos
 
-//Post - baixa individual informando os ids de conta a pagar e conta bancaria
+// POST - baixa individual: informa os ids de conta a pagar e conta bancaria
 
 app.MapPost("/api/baixa/{contaPagarId}", async (int contaPagarId, BaixaTitulo pedido, AppDbContext db) =>
 {
     var conta = await db.ContasAPagar.FindAsync(contaPagarId);
-    if(conta is null)
-    return Results.NotFound("Conta a pagar não encontrada.");
-    if(conta.Pago)
-    return Results.BadRequest("Este título já foi baixado.");
-    
-    var contaBancaria = await db.ContasBancarias.FindAsync(pedido.ContaBancariaId);
-    if(contaBancaria is null || !contaBancaria.Ativo)
-    return Results.BadRequest("Conta bancária não encontrada ou inativa.");
+    if (conta is null)
+        return Results.NotFound("Conta a pagar não encontrada.");
+    if (conta.Pago)
+        return Results.BadRequest("Este título já foi baixado.");
 
-    if(contaBancaria.Saldo < conta.Valor)
-    return Results.BadRequest($"Saldo insuficiente. Saldo disponível: {contaBancaria.Saldo:C}");
+    var contaBancaria = await db.ContasBancarias.FindAsync(pedido.ContaBancariaId);
+    if (contaBancaria is null || !contaBancaria.Ativo)
+        return Results.BadRequest("Conta bancária não encontrada ou inativa.");
+
+    if (contaBancaria.Saldo < conta.Valor)
+        return Results.BadRequest($"Saldo insuficiente. Saldo disponível: {contaBancaria.Saldo:C}");
 
     contaBancaria.Saldo -= conta.Valor;
     conta.Pago = true;
@@ -384,7 +385,227 @@ app.MapPost("/api/baixa/{contaPagarId}", async (int contaPagarId, BaixaTitulo pe
 }
 ).WithName("BaixarTituloIndividual").WithOpenApi();
 
+// POST - baixa em lote: informa uma lista de ids e a conta bancária 
+app.MapPost("/api/baixa/lote", async (BaixaLote pedido, AppDbContext db) =>
+{
+    if (pedido.ContaPagarIds == null || !pedido.ContaPagarIds.Any())
+        return Results.BadRequest("Informe ao menos um título para baixa.");
 
+    var contaBancaria = await db.ContasBancarias.FindAsync(pedido.ContaBancariaId);
+    if (contaBancaria is null || !contaBancaria.Ativo)
+        return Results.BadRequest("Conta bancária não encontrada ou inativa.");
 
+    var contas = await db.ContasAPagar
+        .Where(c => pedido.ContaPagarIds.Contains(c.Id))
+        .ToListAsync();
+
+    var naoEncontrados = pedido.ContaPagarIds.Except(contas.Select(c => c.Id)).ToList();
+    if (naoEncontrados.Any())
+        return Results.NotFound(new { Mensagem = "Títulos não encontrados.", Ids = naoEncontrados });
+
+    var jaPagos = contas.Where(c => c.Pago).Select(c => c.Id).ToList();
+    if (jaPagos.Any())
+        return Results.BadRequest(new { Mensagem = "Os seguintes títulos já foram baixados.", Ids = jaPagos });
+
+    var totalLote = contas.Sum(c => c.Valor);
+    if (contaBancaria.Saldo < totalLote)
+        return Results.BadRequest($"Saldo insuficiente. Total necessário: {totalLote:C} | Disponível: {contaBancaria.Saldo:C}");
+
+    var baixasRealizadas = new List<object>();
+
+    foreach (var conta in contas)
+    {
+        contaBancaria.Saldo -= conta.Valor;
+        conta.Pago = true;
+        conta.ContaBancariaId = contaBancaria.Id;
+
+        var baixa = new BaixaTitulo
+        {
+            ContaPagarId = conta.Id,
+            ContaBancariaId = contaBancaria.Id,
+            ValorBaixado = conta.Valor,
+            DataPagamento = DateTime.Now
+        };
+
+        db.BaixasTitulos.Add(baixa);
+        baixasRealizadas.Add(new { TituloId = conta.Id, Descricao = conta.Descricao, ValorBaixado = conta.Valor });
+
+    }
+
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new
+    {
+        Mensagem = $"{contas.Count} título(s) baixado(s) com sucesso.",
+        TotalDebitado = totalLote,
+        SaldoRestante = contaBancaria.Saldo,
+        Titulos = baixasRealizadas
+    });
+}).WithName("BaixarTitulosEmLote").WithOpenApi();
+
+// GET - Histórico de todas as baixas realizadas
+app.MapGet("/api/baixa", async (AppDbContext db) =>
+{
+    var baixas = await db.BaixasTitulos
+        .Include(b => b.ContaPagar)
+            .ThenInclude(cp => cp!.Fornecedor)
+        .Include(b => b.ContaBancaria)
+        .OrderByDescending(b => b.DataPagamento)
+        .ToListAsync();
+
+    if (!baixas.Any())
+        return Results.NotFound("Nenhuma baixa registrada.");
+
+    return Results.Ok(baixas);
+}).WithName("ListarBaixas").WithOpenApi();
+
+// GET - Detalhes de uma baixa específica
+app.MapGet("/api/baixa/{baixaId}", async (int baixaId, AppDbContext db) =>
+{
+    var baixa = await db.BaixasTitulos
+        .Include(b => b.ContaPagar)
+            .ThenInclude(cp => cp!.Fornecedor)
+        .Include(b => b.ContaBancaria)
+        .FirstOrDefaultAsync(b => b.Id == baixaId);
+
+    if (baixa is null)
+        return Results.NotFound("Baixa não encontrada.");
+
+    return Results.Ok(baixa);
+}).WithName("DetalhesBaixa").WithOpenApi();
+
+// DELETE - Cancela uma baixa e devolve o saldo para a conta bancária
+app.MapDelete("/api/baixa/{baixaId}", async (int baixaId, AppDbContext db) =>
+{
+    var baixa = await db.BaixasTitulos.FindAsync(baixaId);
+    if (baixa is null)
+        return Results.NotFound("Baixa não encontrada.");
+
+    var conta = await db.ContasAPagar.FindAsync(baixa.ContaPagarId);
+    if (conta is null)
+        return Results.NotFound("Conta a pagar relacionada não encontrada.");
+
+    var contaBancaria = await db.ContasBancarias.FindAsync(baixa.ContaBancariaId);
+    if (contaBancaria is null)
+        return Results.NotFound("Conta bancária relacionada não encontrada.");
+
+    // Devolve o saldo para a conta bancária
+    contaBancaria.Saldo += baixa.ValorBaixado;
+
+    // Marca a conta como não paga
+    conta.Pago = false;
+    conta.ContaBancariaId = null;
+
+    // Remove o registro de baixa
+    db.BaixasTitulos.Remove(baixa);
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new
+    {
+        Mensagem = "Baixa cancelada com sucesso.",
+        SaldoDevolvido = baixa.ValorBaixado,
+        SaldoAtualizado = contaBancaria.Saldo,
+        ContaBancaria = contaBancaria.NomeBanco,
+        ContaPagar = conta.Descricao
+    });
+}).WithName("CancelarBaixa").WithOpenApi();
+
+// PUT - Reativa uma conta a pagar após cancelamento de baixa
+app.MapPut("/api/baixa/reativar/{contaPagarId}", async (int contaPagarId, AppDbContext db) =>
+{
+    var conta = await db.ContasAPagar.FindAsync(contaPagarId);
+    if (conta is null)
+        return Results.NotFound("Conta a pagar não encontrada.");
+
+    if (!conta.Pago)
+        return Results.BadRequest("Esta conta não foi baixada, portanto não precisa ser reativada.");
+
+    // Verifica se há uma baixa associada
+    var baixa = await db.BaixasTitulos
+        .FirstOrDefaultAsync(b => b.ContaPagarId == contaPagarId);
+
+    if (baixa is null)
+        return Results.BadRequest("Nenhuma baixa encontrada para esta conta.");
+
+    // Reativa a conta (apenas marca como não paga)
+    conta.Pago = false;
+    conta.ContaBancariaId = null;
+
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new
+    {
+        Mensagem = "Conta reativada com sucesso.",
+        ContaId = conta.Id,
+        Descricao = conta.Descricao,
+        Valor = conta.Valor,
+        Status = "Pendente"
+    });
+}).WithName("ReativarContaPagar").WithOpenApi();
+
+// ============================================================
+// RELATÓRIO PARAMETRIZADO
+// ============================================================
+
+// GET - Todos os parâmetros são opcionais.
+// Use: dataInicio, dataFim, pago (true/false), fornecedorId, contaContabilId, centroCustoId
+app.MapGet("/api/relatorio", async (
+    AppDbContext db,
+    DateTime? dataInicio,
+    DateTime? dataFim,
+    bool? pago,
+    int? fornecedorId,
+    int? contaContabilId,
+    int? centroCustoId
+) =>
+{
+    var query = db.ContasAPagar
+        .Include(c => c.Fornecedor)
+        .Include(c => c.ContaContabil)
+        .Include(c => c.CentroCusto)
+        .Include(c => c.ContaBancaria)
+        .AsQueryable();
+
+    if (dataInicio.HasValue)
+        query = query.Where(c => c.DataVencimento >= dataInicio.Value);
+
+    if (dataFim.HasValue)
+        query = query.Where(c => c.DataVencimento <= dataFim.Value);
+
+    if (pago.HasValue)
+        query = query.Where(c => c.Pago == pago.Value);
+
+    if (fornecedorId.HasValue)
+        query = query.Where(c => c.FornecedorId == fornecedorId.Value);
+
+    if (contaContabilId.HasValue)
+        query = query.Where(c => c.ContaContabilId == contaContabilId.Value);
+
+    if (centroCustoId.HasValue)
+        query = query.Where(c => c.CentroCustoId == centroCustoId.Value);
+
+    var titulos = await query.OrderBy(c => c.DataVencimento).ToListAsync();
+
+    if (!titulos.Any())
+        return Results.NotFound("Nenhuma conta encontrada com os filtros aplicados.");
+
+    var totalPago = titulos.Where(c => c.Pago).Sum(c => c.Valor);
+    var totalPendente = titulos.Where(c => !c.Pago).Sum(c => c.Valor);
+
+    return Results.Ok(new
+    {
+        Titulos = titulos,
+        Resumo = new
+        {
+            TotalTitulos = titulos.Count,
+            TotalPago = totalPago,
+            TotalPendente = totalPendente,
+            TotalGeral = totalPago + totalPendente
+        }
+    });
+}).WithName("RelatorioContasAPagar").WithOpenApi();
 
 app.Run();
+
+// Body da baixa em lote: { "contaPagarIds": [1, 2, 3], "contaBancariaId": 1 }
+record BaixaLote(List<int> ContaPagarIds, int ContaBancariaId);
