@@ -30,10 +30,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 
-// Rota placeholder (adicionei uma rota mínima no / para confirmar que a API está online 
-// quando acessada pelo navegador. 
-// As rotas de CRUD de cada entidade ainda precisam ser implementadas)
-app.MapGet("/", () => "Crash ERP API está online!");
 
 // ROTAS DE FORNECEDORES - Utilizando Swagger
 // GET request
@@ -97,16 +93,16 @@ app.MapGet("api/contacontabil/", async (AppDbContext db) =>
     }
 }).WithName("ListarContaContabil").WithOpenApi();
 
-app.MapPost("/api/contacontabil/", async (ContaContabil contacontabil, AppDbContext db) =>
+    // POST - Cria uma nova conta contábil
+app.MapPost("/api/contacontabil", async (ContaContabil contacontabil, AppDbContext db) =>
 {
+    if (string.IsNullOrWhiteSpace(contacontabil.Nome) || string.IsNullOrWhiteSpace(contacontabil.Codigo))
+        return Results.BadRequest("O nome e o código da conta contábil são obrigatórios.");
+ 
+    contacontabil.Ativo = true;
     db.ContasContabeis.Add(contacontabil);
-        if (!string.IsNullOrWhiteSpace(contacontabil.Nome) || string.IsNullOrWhiteSpace(contacontabil.Codigo)){
-            await db.SaveChangesAsync();
-            return Results.Created($"/api/contacontabil/{contacontabil.Id}", contacontabil);
-        } else
-        {
-            return Results.BadRequest("O nome da conta contábil não pode ser vazio.");
-        }
+    await db.SaveChangesAsync();
+    return Results.Created($"/api/contacontabil/{contacontabil.Id}", contacontabil);
 }).WithName("CriarContaContabil").WithOpenApi();
 
 app.MapPut("/api/contacontabil/{id}", async (int id, ContaContabil atualizado, AppDbContext db) =>
