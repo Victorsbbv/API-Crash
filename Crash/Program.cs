@@ -36,7 +36,12 @@ app.UseSwaggerUI();
 app.MapGet("/api/fornecedores", async (AppDbContext db) =>
 {
     var fornecedores = await db.Fornecedores.Where(f => f.Ativo).ToListAsync();
-    return Results.Ok(fornecedores);
+    var fornecedoresInativados = await db.Fornecedores.Where(f => !f.Ativo).ToListAsync();
+    return Results.Ok(new
+    {
+        ativos = fornecedores,
+        inativos = fornecedoresInativados
+    });
 }).WithName("ListarFornecedores").WithOpenApi();
 
 //POST request
@@ -85,13 +90,18 @@ app.MapDelete("/api/fornecedores/{id}", async (int id, AppDbContext db) =>
 app.MapGet("api/contacontabil/", async (AppDbContext db) =>
 {
     var contacontabil = await db.ContasContabeis.Where(f => f.Ativo).ToListAsync();
-    if (contacontabil.Any())
+    var contacontabilInativo = await db.ContasContabeis.Where(f => !f.Ativo).ToListAsync();
+    if (contacontabil.Any() || contacontabilInativo.Any())
     {
-        return Results.Ok(contacontabil);
+        return Results.Ok(new
+        {
+            ativos = contacontabil,
+            inativados = contacontabilInativo
+        });
     }
     else
     {
-        return Results.NotFound("Não há contas contábeis registrados ou ativos.");
+        return Results.NotFound("Não há contas contábeis registradas.");
     }
 }).WithName("ListarContaContabil").WithOpenApi();
 
@@ -142,11 +152,17 @@ app.MapGet("/api/centrocusto", async (AppDbContext db) =>
 {
     var centros = await db.CentrosCusto.Where(c => c.Ativo).
     ToListAsync();
-    if (!centros.Any())
+    var centrosInativos = await db.CentrosCusto.Where(c => !c.Ativo).
+    ToListAsync();
+    if (!centros.Any() || !centrosInativos.Any())
     {
         return Results.NotFound("Não há centros de custo registrados ou ativos.");
     }
-    return Results.Ok(centros);
+    return Results.Ok(new
+    {
+        ativos = centros,
+        inativos = centrosInativos
+    });
 }).WithName("ListarCentrosCusto").WithOpenApi();
 
 //Post - Criar um novo centro de custo
@@ -187,11 +203,16 @@ app.MapDelete("/api/centrocusto/{id}", async (int id, AppDbContext db) =>
 app.MapGet("/api/contabancaria", async (AppDbContext db) =>
 {
     var contas = await db.ContasBancarias.Where(c => c.Ativo).ToListAsync();
-    if (!contas.Any())
+    var contasBancariasInativas = await db.ContasBancarias.Where(c => !c.Ativo).ToListAsync();
+    if (!contas.Any() || !contasBancariasInativas.Any())
     {
         return Results.NotFound("Não há contas bancárias registradas ou ativas.");
     }
-    return Results.Ok(contas);
+    return Results.Ok(new
+    {
+        ativos = contas,
+        inativos = contasBancariasInativas
+    });
 }).WithName("ListarContasBancarias").WithOpenApi();
 
 // POST - Faz a criação de uma nova conta bancária

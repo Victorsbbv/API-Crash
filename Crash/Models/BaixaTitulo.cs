@@ -1,17 +1,19 @@
-using System;
-
+using System.ComponentModel.DataAnnotations;
 namespace Crash.Models;
 
 public class BaixaTitulo
 {
     public int Id { get; set; }
-    public DateTime DataPagamento { get; set; } = DateTime.Now;
-    public decimal ValorBaixado { get; set; }
+    [Required]
+    public required DateTime DataPagamento { get; set; } = DateTime.Now;
+    [Required]
+    public required decimal ValorBaixado { get; set; }
 
     // Relacionamentos
-    public int ContaPagarId { get; set; }
+    [Required]
+    public required int ContaPagarId { get; set; }
     public ContaPagar? ContaPagar { get; set; }
-
-    public int ContaBancariaId { get; set; }
+    [Required]
+    public required int ContaBancariaId { get; set; }
     public ContaBancaria? ContaBancaria { get; set; }
 }
