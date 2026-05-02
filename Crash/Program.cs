@@ -62,6 +62,7 @@ app.MapPut("/api/fornecedores/{id}", async (int id, Fornecedor atualizado, AppDb
 
     fornecedor.Nome = atualizado.Nome;
     fornecedor.CNPJ = atualizado.CNPJ;
+    fornecedor.Ativo = atualizado.Ativo;
     await db.SaveChangesAsync();
     return Results.Ok(fornecedor);
 }).WithName("AtualizarFornecedor").WithOpenApi();
@@ -106,6 +107,8 @@ app.MapPost("/api/contacontabil", async (ContaContabil contacontabil, AppDbConte
     return Results.Created($"/api/contacontabil/{contacontabil.Id}", contacontabil);
 }).WithName("CriarContaContabil").WithOpenApi();
 
+
+// PUT
 app.MapPut("/api/contacontabil/{id}", async (int id, ContaContabil atualizado, AppDbContext db) =>
 {
     var contacontabil = await db.ContasContabeis.FindAsync(id);
@@ -115,6 +118,7 @@ app.MapPut("/api/contacontabil/{id}", async (int id, ContaContabil atualizado, A
     }
     contacontabil.Nome = atualizado.Nome;
     contacontabil.Codigo = atualizado.Codigo;
+    contacontabil.Ativo = atualizado.Ativo;
     await db.SaveChangesAsync();
     return Results.Ok(contacontabil);
 }).WithName("BuscarContaContabil").WithOpenApi();
@@ -161,6 +165,7 @@ app.MapPut("/api/centro/{id}", async (int id, CentroCusto atualizado, AppDbConte
     var centro = await db.CentrosCusto.FindAsync(id);
     if (centro is null) return Results.NotFound("Centro de custo não encontrado.");
     centro.Nome = atualizado.Nome;
+    centro.Ativo = atualizado.Ativo;
     await db.SaveChangesAsync();
     return Results.Ok(centro);
 }).WithName("AtualizarCentroCusto").WithOpenApi();
@@ -213,6 +218,7 @@ app.MapPut("/api/contabancaria/{id}", async (int id, ContaBancaria atualizado, A
 
     conta.NomeBanco = atualizado.NomeBanco;
     conta.Saldo = atualizado.Saldo;
+    conta.Ativo = atualizado.Ativo;
     await db.SaveChangesAsync();
     return Results.Ok(conta);
 }).WithName("AtualizarContaBancaria").WithOpenApi();
@@ -543,12 +549,9 @@ app.MapPut("/api/baixa/reativar/{contaPagarId}", async (int contaPagarId, AppDbC
     });
 }).WithName("ReativarContaPagar").WithOpenApi();
 
-// ============================================================
 // RELATÓRIO PARAMETRIZADO
-// ============================================================
 
 // GET - Todos os parâmetros são opcionais.
-// Use: dataInicio, dataFim, pago (true/false), fornecedorId, contaContabilId, centroCustoId
 app.MapGet("/api/relatorio", async (
     AppDbContext db,
     DateTime? dataInicio,
