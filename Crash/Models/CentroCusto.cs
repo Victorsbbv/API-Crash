@@ -5,8 +5,7 @@ namespace Crash.Models;
 
 public class CentroCusto
 {   
-    [Required]
-    public required int Id { get; set; }
+    public int Id { get; set; }
     [Required]
     public required string Nome { get; set; } = string.Empty;
     [DefaultValue(true)] 

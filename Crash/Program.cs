@@ -30,6 +30,9 @@ if (app.Environment.IsDevelopment())
 app.UseSwagger();
 app.UseSwaggerUI();
 
+// Abre diretamente no swagger
+app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
+
 
 // ROTAS DE FORNECEDORES - Utilizando Swagger
 // GET request
@@ -37,16 +40,25 @@ app.MapGet("/api/fornecedores", async (AppDbContext db) =>
 {
     var fornecedores = await db.Fornecedores.Where(f => f.Ativo).ToListAsync();
     var fornecedoresInativados = await db.Fornecedores.Where(f => !f.Ativo).ToListAsync();
-    return Results.Ok(new
+    if (fornecedores.Any() || fornecedoresInativados.Any())
     {
-        ativos = fornecedores,
-        inativos = fornecedoresInativados
-    });
+        return Results.Ok(new
+        {
+            ativos = fornecedores,
+            inativados = fornecedoresInativados
+        });
+    }
+    else
+    {
+        return Results.NotFound("Não há fornecedores registrados.");
+    }
 }).WithName("ListarFornecedores").WithOpenApi();
+
 
 //POST request
 app.MapPost("/api/fornecedores", async (Fornecedor fornecedor, AppDbContext db) =>
 {
+    fornecedor.Ativo = true;
     //Fornecedores 'espera' o swagger (Botão de enviar)
     db.Fornecedores.Add(fornecedor);
     //Salva as alterações no banco de dados
@@ -154,15 +166,15 @@ app.MapGet("/api/centrocusto", async (AppDbContext db) =>
     ToListAsync();
     var centrosInativos = await db.CentrosCusto.Where(c => !c.Ativo).
     ToListAsync();
-    if (!centros.Any() || !centrosInativos.Any())
+    if (centros.Any() || centrosInativos.Any())
     {
-        return Results.NotFound("Não há centros de custo registrados ou ativos.");
-    }
-    return Results.Ok(new
+        return Results.Ok(new
     {
         ativos = centros,
         inativos = centrosInativos
     });
+    }
+        return Results.NotFound("Não há centros de custo registrados ou ativos.");
 }).WithName("ListarCentrosCusto").WithOpenApi();
 
 //Post - Criar um novo centro de custo
@@ -170,13 +182,14 @@ app.MapPost("/api/centrocusto", async (CentroCusto centrocusto, AppDbContext db)
 {
     if (string.IsNullOrWhiteSpace(centrocusto.Nome))
         return Results.BadRequest("O nome do centro de custo é obrigatório.");
+    centrocusto.Ativo = true;
     db.CentrosCusto.Add(centrocusto);
     await db.SaveChangesAsync();
     return Results.Created($"/api/centrocusto/{centrocusto.Id}", centrocusto);
 }).WithName("CriarCentroCusto").WithOpenApi();
 
 //Put - Atualiza um centro de custo existente
-app.MapPut("/api/centro/{id}", async (int id, CentroCusto atualizado, AppDbContext db) =>
+app.MapPut("/api/centrocusto/{id}", async (int id, CentroCusto atualizado, AppDbContext db) =>
 {
     var centro = await db.CentrosCusto.FindAsync(id);
     if (centro is null) return Results.NotFound("Centro de custo não encontrado.");
@@ -204,15 +217,15 @@ app.MapGet("/api/contabancaria", async (AppDbContext db) =>
 {
     var contas = await db.ContasBancarias.Where(c => c.Ativo).ToListAsync();
     var contasBancariasInativas = await db.ContasBancarias.Where(c => !c.Ativo).ToListAsync();
-    if (!contas.Any() || !contasBancariasInativas.Any())
+    if (contas.Any() || contasBancariasInativas.Any())
     {
-        return Results.NotFound("Não há contas bancárias registradas ou ativas.");
-    }
-    return Results.Ok(new
+        return Results.Ok(new
     {
         ativos = contas,
         inativos = contasBancariasInativas
     });
+    }
+    return Results.NotFound("Não há contas bancárias registradas ou ativas.");
 }).WithName("ListarContasBancarias").WithOpenApi();
 
 // POST - Faz a criação de uma nova conta bancária
@@ -222,7 +235,7 @@ app.MapPost("/api/contabancaria", async (ContaBancaria conta, AppDbContext db) =
     {
         return Results.BadRequest("O nome do banco é obrigatório.");
     }
-
+    conta.Ativo = true;
     db.ContasBancarias.Add(conta);
     await db.SaveChangesAsync();
     return Results.Created($"/api/contabancaria/{conta.Id}", conta);
@@ -260,8 +273,24 @@ app.MapDelete("/api/contabancaria/{id}", async (int id, AppDbContext db) =>
 
 // Rotas de Contas a Pagar
 
-// GET - lista todas as contas a pagar com relacionamentos
-app.MapGet("/api/contapagar", async (int id, AppDbContext db) =>
+// GET - Lista todas as contas a pagar
+app.MapGet("/api/contapagar", async (AppDbContext db) =>
+{
+    var contas = await db.ContasAPagar
+        .Include(c => c.Fornecedor)
+        .Include(c => c.ContaContabil)
+        .Include(c => c.CentroCusto)
+        .Include(c => c.ContaBancaria)
+        .ToListAsync();
+
+    if (!contas.Any())
+        return Results.NotFound("Nenhuma conta a pagar registrada.");
+
+    return Results.Ok(contas);
+}).WithName("ListarContasAPagar").WithOpenApi();
+
+// GET - Busca uma conta a pagar por ID
+app.MapGet("/api/contapagar/{id}", async (int id, AppDbContext db) =>
 {
     var conta = await db.ContasAPagar
         .Include(c => c.Fornecedor)
@@ -271,9 +300,8 @@ app.MapGet("/api/contapagar", async (int id, AppDbContext db) =>
         .FirstOrDefaultAsync(c => c.Id == id);
 
     if (conta is null)
-    {
         return Results.NotFound("Conta a pagar não encontrada.");
-    }
+
     return Results.Ok(conta);
 }).WithName("BuscarContaPagar").WithOpenApi();
 
@@ -305,6 +333,7 @@ app.MapPost("/api/contapagar", async (ContaPagar conta, AppDbContext db) =>
     conta.CentroCusto = null;
     conta.ContaBancaria = null;
 
+    conta.Pago = false;
     db.ContasAPagar.Add(conta);
     await db.SaveChangesAsync();
     return Results.Created($"/api/contapagar/{conta.Id}", conta);
@@ -536,39 +565,6 @@ app.MapDelete("/api/baixa/{baixaId}", async (int baixaId, AppDbContext db) =>
         ContaPagar = conta.Descricao
     });
 }).WithName("CancelarBaixa").WithOpenApi();
-
-// PUT - Reativa uma conta a pagar após cancelamento de baixa
-app.MapPut("/api/baixa/reativar/{contaPagarId}", async (int contaPagarId, AppDbContext db) =>
-{
-    var conta = await db.ContasAPagar.FindAsync(contaPagarId);
-    if (conta is null)
-        return Results.NotFound("Conta a pagar não encontrada.");
-
-    if (!conta.Pago)
-        return Results.BadRequest("Esta conta não foi baixada, portanto não precisa ser reativada.");
-
-    // Verifica se há uma baixa associada
-    var baixa = await db.BaixasTitulos
-        .FirstOrDefaultAsync(b => b.ContaPagarId == contaPagarId);
-
-    if (baixa is null)
-        return Results.BadRequest("Nenhuma baixa encontrada para esta conta.");
-
-    // Reativa a conta (apenas marca como não paga)
-    conta.Pago = false;
-    conta.ContaBancariaId = null;
-
-    await db.SaveChangesAsync();
-
-    return Results.Ok(new
-    {
-        Mensagem = "Conta reativada com sucesso.",
-        ContaId = conta.Id,
-        Descricao = conta.Descricao,
-        Valor = conta.Valor,
-        Status = "Pendente"
-    });
-}).WithName("ReativarContaPagar").WithOpenApi();
 
 // RELATÓRIO PARAMETRIZADO
 
