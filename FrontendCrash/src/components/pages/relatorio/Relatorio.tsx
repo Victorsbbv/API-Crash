@@ -3,6 +3,7 @@ import DateInput from "../../DateInput";
 import type ContaPagar from "../../../models/ContaPagar";
 import type CentroCusto from "../../../models/CentroCusto";
 import type ContaContabil from "../../../models/ContaContabil";
+import type Fornecedor from "../../../models/Fornecedor";
 import api from "../../../services/api";
 
 function Relatorio() {
@@ -13,12 +14,14 @@ function Relatorio() {
     const [pago, setPago] = useState(""); // "" | "true" | "false"
     const [centroCustoId, setCentroCustoId] = useState("");
     const [contaContabilId, setContaContabilId] = useState("");
+    const [fornecedorId, setFornecedorId] = useState("");
     const [valorMin, setValorMin] = useState("");
     const [valorMax, setValorMax] = useState("");
 
     // Listas para os selects
     const [centrosCusto, setCentrosCusto] = useState<CentroCusto[]>([]);
     const [contasContabeis, setContasContabeis] = useState<ContaContabil[]>([]);
+    const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
 
     // Resultados
     const [titulos, setTitulos] = useState<ContaPagar[]>([]);
@@ -28,12 +31,14 @@ function Relatorio() {
     useEffect(() => {
         async function carregarFiltros() {
             try {
-                const [resCc, resCont] = await Promise.all([
+                const [resCc, resCont, resForn] = await Promise.all([
                     api.get("/api/centrocusto"),
-                    api.get("/api/contacontabil/")
+                    api.get("/api/contacontabil/"),
+                    api.get("/api/fornecedores")
                 ]);
                 setCentrosCusto(resCc.data.ativos ?? []);
                 setContasContabeis(resCont.data.ativos ?? []);
+                setFornecedores(resForn.data.ativos ?? []);
             } catch {
                 // selects ficam vazios se a API falhar — não bloqueia o relatório
             }
@@ -76,6 +81,9 @@ function Relatorio() {
 
             if (contaContabilId)
                 lista = lista.filter((c) => String(c.contaContabilId) === contaContabilId);
+
+            if (fornecedorId)
+                lista = lista.filter((c) => String(c.fornecedorId) === fornecedorId);
 
             const min = valorMin !== "" ? parseFloat(valorMin) : null;
             const max = valorMax !== "" ? parseFloat(valorMax) : null;
@@ -132,7 +140,7 @@ function Relatorio() {
                         // Filtra por data de vencimento — demais filtros aplicados dentro deste intervalo
                     </p>
 
-                    {/* Status + Centro de Custo */}
+                    {/* Status + Fornecedor */}
                     <div className="form-grid" style={{ marginBottom: 16 }}>
                         <div className="form-group">
                             <label className="form-label">Status</label>
@@ -144,6 +152,20 @@ function Relatorio() {
                             </select>
                         </div>
                         <div className="form-group">
+                            <label className="form-label">Fornecedor</label>
+                            <select className="form-select" value={fornecedorId}
+                                onChange={(e: any) => setFornecedorId(e.target.value)}>
+                                <option value="">Todos</option>
+                                {fornecedores.map((f) => (
+                                    <option key={f.id} value={f.id}>{f.nome}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Centro de Custo + Conta Contábil */}
+                    <div className="form-grid" style={{ marginBottom: 16 }}>
+                        <div className="form-group">
                             <label className="form-label">Centro de Custo</label>
                             <select className="form-select" value={centroCustoId}
                                 onChange={(e: any) => setCentroCustoId(e.target.value)}>
@@ -153,18 +175,16 @@ function Relatorio() {
                                 ))}
                             </select>
                         </div>
-                    </div>
-
-                    {/* Conta Contábil */}
-                    <div className="form-group" style={{ marginBottom: 16 }}>
-                        <label className="form-label">Conta Contábil</label>
-                        <select className="form-select" value={contaContabilId}
-                            onChange={(e: any) => setContaContabilId(e.target.value)}>
-                            <option value="">Todas</option>
-                            {contasContabeis.map((c) => (
-                                <option key={c.id} value={c.id}>{c.codigo} — {c.nome}</option>
-                            ))}
-                        </select>
+                        <div className="form-group">
+                            <label className="form-label">Conta Contábil</label>
+                            <select className="form-select" value={contaContabilId}
+                                onChange={(e: any) => setContaContabilId(e.target.value)}>
+                                <option value="">Todas</option>
+                                {contasContabeis.map((c) => (
+                                    <option key={c.id} value={c.id}>{c.codigo} — {c.nome}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
 
                     {/* Faixa de valor */}
