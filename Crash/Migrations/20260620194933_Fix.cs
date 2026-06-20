@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Crash.Migrations
 {
     /// <inheritdoc />
-    public partial class AdicionandoEntidadesDeApoio : Migration
+    public partial class Fix : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -61,8 +61,8 @@ namespace Crash.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Nome = table.Column<string>(type: "TEXT", nullable: true),
-                    CNPJ = table.Column<string>(type: "TEXT", nullable: true),
+                    Nome = table.Column<string>(type: "TEXT", nullable: false),
+                    CNPJ = table.Column<string>(type: "TEXT", nullable: false),
                     Ativo = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
@@ -113,6 +113,44 @@ namespace Crash.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "BaixasTitulos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    DataPagamento = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    ValorBaixado = table.Column<decimal>(type: "TEXT", nullable: false),
+                    ContaPagarId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ContaBancariaId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BaixasTitulos", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BaixasTitulos_ContasAPagar_ContaPagarId",
+                        column: x => x.ContaPagarId,
+                        principalTable: "ContasAPagar",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_BaixasTitulos_ContasBancarias_ContaBancariaId",
+                        column: x => x.ContaBancariaId,
+                        principalTable: "ContasBancarias",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BaixasTitulos_ContaBancariaId",
+                table: "BaixasTitulos",
+                column: "ContaBancariaId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BaixasTitulos_ContaPagarId",
+                table: "BaixasTitulos",
+                column: "ContaPagarId");
+
             migrationBuilder.CreateIndex(
                 name: "IX_ContasAPagar_CentroCustoId",
                 table: "ContasAPagar",
@@ -137,6 +175,9 @@ namespace Crash.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "BaixasTitulos");
+
             migrationBuilder.DropTable(
                 name: "ContasAPagar");
 

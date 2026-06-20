@@ -11,14 +11,41 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Crash.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260426001200_AdicionandoEntidadesDeApoio")]
-    partial class AdicionandoEntidadesDeApoio
+    [Migration("20260620194933_Fix")]
+    partial class Fix
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.26");
+
+            modelBuilder.Entity("Crash.Models.BaixaTitulo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ContaBancariaId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ContaPagarId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("DataPagamento")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("ValorBaixado")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContaBancariaId");
+
+                    b.HasIndex("ContaPagarId");
+
+                    b.ToTable("BaixasTitulos");
+                });
 
             modelBuilder.Entity("Crash.Models.CentroCusto", b =>
                 {
@@ -38,7 +65,7 @@ namespace Crash.Migrations
                     b.ToTable("CentrosCusto");
                 });
 
-            modelBuilder.Entity("Crash.Models.ContaBacancaria", b =>
+            modelBuilder.Entity("Crash.Models.ContaBancaria", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -135,14 +162,35 @@ namespace Crash.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("CNPJ")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Nome")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
                     b.ToTable("Fornecedores");
+                });
+
+            modelBuilder.Entity("Crash.Models.BaixaTitulo", b =>
+                {
+                    b.HasOne("Crash.Models.ContaBancaria", "ContaBancaria")
+                        .WithMany()
+                        .HasForeignKey("ContaBancariaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Crash.Models.ContaPagar", "ContaPagar")
+                        .WithMany()
+                        .HasForeignKey("ContaPagarId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ContaBancaria");
+
+                    b.Navigation("ContaPagar");
                 });
 
             modelBuilder.Entity("Crash.Models.ContaPagar", b =>
@@ -153,7 +201,7 @@ namespace Crash.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Crash.Models.ContaBacancaria", "ContaBancaria")
+                    b.HasOne("Crash.Models.ContaBancaria", "ContaBancaria")
                         .WithMany()
                         .HasForeignKey("ContaBancariaId");
 

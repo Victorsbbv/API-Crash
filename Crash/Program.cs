@@ -10,6 +10,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod());
+});
+
 //Usar o SQLite em Options
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -25,6 +33,7 @@ if (app.Environment.IsDevelopment())
         db.Database.EnsureCreated();
     }
 }
+app.UseCors();
 
 // Ativa a interface visual do Swagger para testar as rotas
 app.UseSwagger();
@@ -32,7 +41,6 @@ app.UseSwaggerUI();
 
 // Abre diretamente no swagger
 app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
-
 
 // ROTAS DE FORNECEDORES - Utilizando Swagger
 // GET request
@@ -403,7 +411,7 @@ app.MapDelete("/api/contapagar/{id}", async (int id, AppDbContext db) =>
 
 // POST - baixa individual: informa os ids de conta a pagar e conta bancaria
 
-app.MapPost("/api/baixa/{contaPagarId}", async (int contaPagarId, BaixaTitulo pedido, AppDbContext db) =>
+app.MapPost("/api/baixa/{contaPagarId}", async (int contaPagarId, BaixaIndividual pedido, AppDbContext db) =>
 {
     var conta = await db.ContasAPagar.FindAsync(contaPagarId);
     if (conta is null)
@@ -587,10 +595,14 @@ app.MapGet("/api/relatorio", async (
         .AsQueryable();
 
     if (dataInicio.HasValue)
-        query = query.Where(c => c.DataVencimento >= dataInicio.Value);
+        query = query.Where(c =>
+            (c.Pago && db.BaixasTitulos.Any(b => b.ContaPagarId == c.Id && b.DataPagamento >= dataInicio.Value)) ||
+            (!c.Pago && c.DataVencimento >= dataInicio.Value));
 
     if (dataFim.HasValue)
-        query = query.Where(c => c.DataVencimento <= dataFim.Value);
+        query = query.Where(c =>
+            (c.Pago && db.BaixasTitulos.Any(b => b.ContaPagarId == c.Id && b.DataPagamento <= dataFim.Value)) ||
+            (!c.Pago && c.DataVencimento <= dataFim.Value));
 
     if (pago.HasValue)
         query = query.Where(c => c.Pago == pago.Value);
@@ -629,3 +641,4 @@ app.Run();
 
 // Body da baixa em lote: { "contaPagarIds": [1, 2, 3], "contaBancariaId": 1 }
 record BaixaLote(List<int> ContaPagarIds, int ContaBancariaId);
+record BaixaIndividual(int ContaBancariaId);
