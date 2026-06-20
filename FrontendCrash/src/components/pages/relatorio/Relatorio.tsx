@@ -122,7 +122,7 @@ function Relatorio() {
             <div className="page-header">
                 <div>
                     <h2 className="page-title"><span className="accent">Relatório</span></h2>
-                    <p className="page-subtitle">// consulta parametrizada de contas a pagar</p>
+                    <p className="page-subtitle">// consulta parametrizada de contas a pagar<br/><br/>// Filtra por data de pagamento</p>
                 </div>
             </div>
 
@@ -141,7 +141,7 @@ function Relatorio() {
                         </div>
                     </div>
                     <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", color: "var(--text-muted)", marginBottom: 16 }}>
-                        // Filtra por data de vencimento — demais filtros aplicados dentro deste intervalo
+                        // Filtra por data de vencimento: altere o <u>filtro</u> status para contas pendentes
                     </p>
 
                     {/* Status + Fornecedor */}
