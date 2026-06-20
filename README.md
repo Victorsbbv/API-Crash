@@ -161,6 +161,8 @@ API-Crash/
 
 ## ▶️ Como Executar
 
+### Backend (API)
+
 **Pré-requisitos:** .NET 8 SDK instalado.
 
 ```bash
@@ -175,6 +177,77 @@ dotnet run
 ```
 
 A aplicação iniciará e criará o banco de dados automaticamente. Ao acessar o endereço exibido no terminal (ex: `http://localhost:5128`), você será redirecionado automaticamente para a interface do Swagger.
+
+### Frontend
+
+**Pré-requisitos:** Node.js instalado.
+
+```bash
+# 1. Acesse a pasta do frontend
+cd FrontendCrash
+
+# 2. Instale as dependências
+npm install
+
+# 3. Inicie o servidor de desenvolvimento
+npm run dev
+```
+
+O frontend estará disponível em `http://localhost:5173`. **A API deve estar rodando** em `http://localhost:5128` para que o frontend funcione corretamente.
+
+---
+
+## 🖥️ Frontend
+
+O frontend foi desenvolvido em **React 19 com TypeScript**, utilizando **Vite** como bundler. Consome diretamente a API REST desenvolvida pela equipe via **Axios**.
+
+### Tecnologias
+
+| Item | Tecnologia |
+|---|---|
+| Framework | React 19 (TypeScript) |
+| Bundler | Vite |
+| Roteamento | React Router DOM v7 |
+| HTTP Client | Axios |
+| Estilização | CSS puro com variáveis e sidebar responsiva |
+
+### Estrutura de Telas
+
+O sistema possui navegação lateral (sidebar) com acesso a todas as funcionalidades:
+
+- **Dashboard** — Visão geral com totais de contas a pagar, pagas e pendentes
+- **Contas a Pagar** — Listagem, cadastro e edição de títulos financeiros
+- **Baixas de Títulos** — Realização de baixas individuais ou em lote, com seleção de conta bancária
+- **Relatório** — Consulta parametrizada com filtros por período, status, fornecedor, conta contábil e centro de custo
+- **Fornecedores** — Cadastro, edição e inativação
+- **Conta Contábil** — Cadastro, edição e inativação
+- **Centro de Custo** — Cadastro, edição e inativação
+- **Conta Bancária** — Cadastro, edição, atualização de saldo e inativação
+
+### Organização do Código
+
+```
+FrontendCrash/
+├── src/
+│   ├── components/
+│   │   ├── pages/
+│   │   │   ├── dashboard/
+│   │   │   ├── contapagar/
+│   │   │   ├── baixa/
+│   │   │   ├── relatorio/
+│   │   │   ├── fornecedor/
+│   │   │   ├── contacontabil/
+│   │   │   ├── centrocusto/
+│   │   │   └── contabancaria/
+│   │   └── DateInput.tsx
+│   ├── models/           # Tipagens TypeScript das entidades
+│   ├── services/
+│   │   └── api.ts        # Configuração do Axios (baseURL da API)
+│   ├── App.tsx           # Roteamento principal (BrowserRouter + Routes)
+│   ├── App.css           # Estilos globais e sidebar
+│   └── main.tsx
+└── package.json
+```
 
 ---
 
