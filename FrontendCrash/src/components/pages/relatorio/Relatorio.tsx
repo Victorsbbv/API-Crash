@@ -4,6 +4,7 @@ import type ContaPagar from "../../../models/ContaPagar";
 import type CentroCusto from "../../../models/CentroCusto";
 import type ContaContabil from "../../../models/ContaContabil";
 import type Fornecedor from "../../../models/Fornecedor";
+import type BaixaTitulo from "../../../models/BaixaTitulo";
 import api from "../../../services/api";
 
 function Relatorio() {
@@ -27,18 +28,21 @@ function Relatorio() {
     const [titulos, setTitulos] = useState<ContaPagar[]>([]);
     const [resumo, setResumo] = useState<any>(null);
     const [erro, setErro] = useState("");
+    const [baixas, setBaixas] = useState<BaixaTitulo[]>([]);
 
     useEffect(() => {
         async function carregarFiltros() {
             try {
-                const [resCc, resCont, resForn] = await Promise.all([
+                const [resCc, resCont, resForn, resBaixas] = await Promise.all([
                     api.get("/api/centrocusto"),
                     api.get("/api/contacontabil/"),
-                    api.get("/api/fornecedores")
+                    api.get("/api/fornecedores"),
+                    api.get("/api/baixa").catch(() => ({ data: [] }))
                 ]);
                 setCentrosCusto(resCc.data.ativos ?? []);
                 setContasContabeis(resCont.data.ativos ?? []);
                 setFornecedores(resForn.data.ativos ?? []);
+                setBaixas(Array.isArray(resBaixas.data) ? resBaixas.data : []);
             } catch {
                 // selects ficam vazios se a API falhar — não bloqueia o relatório
             }
@@ -263,9 +267,24 @@ function Relatorio() {
                                         <td className="mono">{fmt(c.valor)}</td>
                                         <td className="mono">{fmtData(c.dataVencimento)}</td>
                                         <td>
-                                            <span className={`badge ${c.pago ? "badge-paid" : "badge-pending"}`}>
-                                                {c.pago ? "● Pago" : "○ Pendente"}
-                                            </span>
+                                            {c.pago ? (() => {
+                                                const baixa = baixas.find((b) => b.contaPagarId === c.id);
+                                                const dataPgto = baixa?.dataPagamento
+                                                    ? new Date(baixa.dataPagamento).toLocaleDateString("pt-BR")
+                                                    : null;
+                                                return (
+                                                    <span className="badge badge-paid" style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                                                        <span>● Pago</span>
+                                                        {dataPgto && (
+                                                            <span style={{ fontSize: "0.65rem", opacity: 0.8, fontFamily: "var(--font-mono)" }}>
+                                                                {dataPgto}
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                );
+                                            })() : (
+                                                <span className="badge badge-pending">○ Pendente</span>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
